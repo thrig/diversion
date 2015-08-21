@@ -1,0 +1,35 @@
+diverson
+
+OpenBSD divert(4) interface packet mangler. Supports (pseudo)random
+drops, delay (and if so possibly also duplication), and data payload
+corruption. One practical application would be to test how well various
+protocols or applications cope with the thus mangled packets.
+
+TODO - it's mostly sorta working, but...
+ * IPv6 extensions header support.
+ * Ability to delay multiple packets instead of just one. (Plus how long
+   packets are delayed for instead of automatically clearing them in the
+   alarm handler.)
+ * A socket interface (imsg_init(3)?) would be nice so that the odds
+   could be adjusted on the fly.
+ * Means to adjust logging beyond is-daemonized-or-not.
+ * Doubtless other things.
+
+In the meantime, fiddle with the args or code as necessary.
+
+
+Quick build and usage notes:
+
+ 1. `make diversion`
+ 2. Edit `pf.conf` e.g. to set something like:
+
+    pass in on em0 inet  proto { udp, tcp } to port 1234 divert-packet port 777
+    pass in on em0 inet6 proto { udp, tcp } to port 1234 divert-packet port 777
+
+ 3. As root: `./diversion -C .1 -D .1 -R .1 -W .1 -d -u _tcpdump 777`
+ 4. Start a listener: `nc -l 1234`
+ 5. Elsewhere, pipe data to it: `echo foo | nc host 1234`
+
+
+Note that this software has not been much tested nor audited for
+problems, so should not be used in critical production environments.

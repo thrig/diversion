@@ -1,0 +1,118 @@
+.Dd August 20 2015
+.Dt DIVERSION 8
+.Ds
+.Sh NAME
+.Nm diversion
+.Nd packet delay, duplication, and derping service
+.Sh SYNOPSIS
+.Nm
+.Bk -words
+.Op Fl C Ar corrupt-odds
+.Op Fl D Ar drop-odds
+.Op Fl R Ar replicate-odds
+.Op Fl W Ar delay-odds
+.Op Fl c Ar corrupt-count
+.Op Fl f Ar divert-sockopt
+.Op Fl ads
+.Op Fl u Ar username
+.Ar divert-port
+.Ek
+.Sh DESCRIPTION
+.Nm
+offers means to delay, duplicate, and corrupt packets via the
+.Xr divert 4
+interface.  There must be appropriate
+.Xr pf.conf 5
+configuration in addition to
+.Nm
+being run with suitable options.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Op Fl C Ar corrupt-odds
+Odds that a packet (either delayed or for immediate send) will have its data
+payload corrupted.  Specify as a floating point number from 0.0 (no chance)
+to 1.0.
+.It Op Fl D Ar drop-odds
+Odds that the packet will be droped.  Floating point as for
+.Fl C .
+.It Op Fl R Ar replicate-odds
+Odds that a delayed packet will also be sent along immediately.
+.It Op Fl W Ar delay-odds
+Odds that a packet will be delayed.  Only one packet for each of the supported
+protocols (IPv4 and IPv6) can be delayed at a time.
+.It Op Fl a
+Corrupt all of the packet, instead of trying for just the data payload.  This
+may send packets off to IP addresses and ports unknown.
+.It Op Fl c Ar corrupt-count
+Number of times to attempt to corrupt the data payload, once by default if
+.Fl C
+is not zero.  The corruption is to flip a random bit for each
+.Ar count
+that rolls less than the
+.Ar corrupt-odds .
+Ideally should be an odd number, as an even number of corruptions have a
+(small) possibility of undoing what the other half did.
+.It Op Fl d
+If set, the program will not daemonize.
+.It Op Fl f Ar divert-sockopt
+Specifies the
+.Dv IP_DIVERTFL
+socket option, No value or
+.Ar 0
+indicates packets should be matched in both directions.  Use
+.Ar 1
+to set
+.Dv IPPROTO_DIVERT_INIT
+and
+.Ar 2
+to set
+.Dv IPPROTO_DIVERT_RESP ,
+which will cause only packets moving in one or the other of directions
+to be acted upon.
+.It Op Fl s
+Helps avoid leaving packet data in memory by zeroing data structures that
+contain packets before they are freed.
+.It Op Fl u Ar username
+Drop privileges to this user.  Recommended.  The account must have a home
+directory, otherwise, the
+.Xr chroot 2
+call will fail.
+.It Ar divert-port
+Port to listen on.  Must agree with rules set in
+.Xr pf.conf 5 .
+See also
+.Xr divert 4
+for example firewall rules.
+.El
+.Pp
+The default odds of anything untoward happening to a packet is zero, so
+positive values must be set to one or more of the odds-accepting options
+for something worse than latency to happen to packets run through 
+.Nm .
+However, note that packets may be discarded if they are obviously
+invalid, or are unsupported, like IPv6 jumbo frames.
+.Sh SIGNALS
+.Bl -tag -width Ds
+.It Dv SIGALRM
+Used internally to reschedule delayed packets for delivery.  The rate
+these signals are generated at is defined in
+.In diversion.h .
+.It Dv SIGINT
+Flushes any delayed packets and terminates program.
+.It Dv SIGTERM
+Flushes any delayed packets and terminates program.
+.Sh SEE ALSO
+.Xr divert 4 ,
+.Xr pf.conf 5 ,
+.Xr tcpdump 8
+.Sh AUTHORS
+.An Jeremy Mates
+.Sh CAVEATS
+.Nm
+has not been audited for security problems, so is likely not suitable
+for use in any sort of critical environment.  Use the 
+.Ar u
+flag to drop privileges so the least amount of code runs as root.
+.Pp
+IPv6 jumbo packets are not supported, and will be discarded.
