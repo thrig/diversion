@@ -3,7 +3,8 @@ CFLAGS = -g -O2 -std=c99 -Wall -Winit-self -Wmissing-include-dirs -Wextra -Wdecl
 # TODO this one causes a warning from isfinite((double) adouble) :/
 #CFLAGS += -Wconversion
 
-CFLAGS += -Werror
+# except debugging IPv6 stuff so warnings
+#CFLAGS += -Werror
 
 diversion: diversion.c diversion.h
 
